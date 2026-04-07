@@ -51,6 +51,44 @@ export class MessagingHandler {
     if (backBtn) {
       backBtn.addEventListener('click', () => this.handleBackToList());
     }
+
+    // New DM button
+    const newDmBtn = document.getElementById('new-dm-btn');
+    if (newDmBtn) {
+      newDmBtn.addEventListener('click', () => this.handleNewDM());
+    }
+
+    // New Group button
+    const newGroupBtn = document.getElementById('new-group-btn');
+    if (newGroupBtn) {
+      newGroupBtn.addEventListener('click', () => this.handleNewGroup());
+    }
+
+    // Emoji picker button
+    const emojiPickerBtn = document.getElementById('emoji-picker-btn');
+    if (emojiPickerBtn) {
+      emojiPickerBtn.addEventListener('click', (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const messageInput = document.getElementById('message-input');
+        this.ui.showEmojiPicker(messageInput, { x: rect.left, y: window.innerHeight - rect.top + 10 });
+      });
+    }
+  }
+
+  handleNewDM() {
+    if (this.ui && this.ui.showUserSearchModal) {
+      this.ui.showUserSearchModal();
+    } else {
+      console.log('[MessagingHandler] User search modal not available');
+    }
+  }
+
+  handleNewGroup() {
+    if (this.ui && this.ui.showCreateGroupModal) {
+      this.ui.showCreateGroupModal();
+    } else {
+      console.log('[MessagingHandler] Create group modal not available');
+    }
   }
 
   async handleSendMessage() {
@@ -77,7 +115,9 @@ export class MessagingHandler {
       messageInput.value = '';
     } catch (error) {
       console.error('[MessagingHandler] Error sending message:', error);
-      alert('Failed to send message: ' + error.message);
+      if (this.ui && this.ui.showToast) {
+        this.ui.showToast('Failed to send message: ' + error.message, 'error');
+      }
     }
   }
 
@@ -128,7 +168,9 @@ export class MessagingHandler {
       }
     } catch (error) {
       console.error('[MessagingHandler] Error uploading file:', error);
-      alert('Failed to upload file: ' + error.message);
+      if (this.ui && this.ui.showToast) {
+        this.ui.showToast('Failed to upload file: ' + error.message, 'error');
+      }
       
       const sendBtn = document.getElementById('send-btn');
       if (sendBtn) {
@@ -174,7 +216,9 @@ export class MessagingHandler {
       this.ui.showConversation('Conversation');
     } catch (error) {
       console.error('[MessagingHandler] Error loading conversation:', error);
-      alert('Failed to load conversation');
+      if (this.ui && this.ui.showToast) {
+        this.ui.showToast('Failed to load conversation', 'error');
+      }
     }
   }
 
