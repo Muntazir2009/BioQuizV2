@@ -63,6 +63,16 @@ export class MessagingHandler {
     if (newGroupBtn) {
       newGroupBtn.addEventListener('click', () => this.handleNewGroup());
     }
+
+    // Emoji picker button
+    const emojiPickerBtn = document.getElementById('emoji-picker-btn');
+    if (emojiPickerBtn) {
+      emojiPickerBtn.addEventListener('click', (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const messageInput = document.getElementById('message-input');
+        this.ui.showEmojiPicker(messageInput, { x: rect.left, y: window.innerHeight - rect.top + 10 });
+      });
+    }
   }
 
   handleNewDM() {

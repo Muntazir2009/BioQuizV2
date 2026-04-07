@@ -7,6 +7,35 @@ export class AuthManager {
   constructor(supabaseClient) {
     this.supabase = supabaseClient;
     this.currentUser = this.loadLocalUser();
+    this.useBackupApi = false;
+    this.backupApiUrl = '/api/chat';
+  }
+
+  // Switch to backup API
+  enableBackupApi() {
+    this.useBackupApi = true;
+    console.log('[Auth] Switched to backup API');
+  }
+
+  // Make request to backup API
+  async backupApiRequest(endpoint, method = 'GET', body = null) {
+    const options = {
+      method,
+      headers: { 'Content-Type': 'application/json' }
+    };
+    
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+    
+    const response = await fetch(`${this.backupApiUrl}${endpoint}`, options);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'API request failed');
+    }
+    
+    return data;
   }
 
   loadLocalUser() {
@@ -136,6 +165,36 @@ export class AuthManager {
       return user;
     } catch (err) {
       console.error('[Auth] Registration error:', err);
+      
+      // Try backup API if Supabase fails
+      if (err.message.includes('fetch') || err.message.includes('connect') || err.message.includes('network')) {
+        console.log('[Auth] Attempting backup API for registration...');
+        try {
+          const result = await this.backupApiRequest('/register', 'POST', {
+            username: cleanUsername,
+            display_name: displayName || cleanUsername,
+            password: password,
+            about: about
+          });
+          
+          if (result.data) {
+            this.enableBackupApi();
+            const user = {
+              id: result.data.id,
+              username: result.data.username,
+              display_name: result.data.display_name,
+              about: result.data.about,
+              theme: 'dark',
+              usingBackupApi: true
+            };
+            this.saveLocalUser(user);
+            return user;
+          }
+        } catch (backupErr) {
+          console.error('[Auth] Backup API also failed:', backupErr);
+        }
+      }
+      
       throw err;
     }
   }
@@ -194,6 +253,34 @@ export class AuthManager {
       return user;
     } catch (err) {
       console.error('[Auth] Login error:', err);
+      
+      // Try backup API if Supabase fails
+      if (err.message.includes('fetch') || err.message.includes('connect') || err.message.includes('network') || err.message.includes('User not found')) {
+        console.log('[Auth] Attempting backup API for login...');
+        try {
+          const result = await this.backupApiRequest('/login', 'POST', {
+            username: cleanUsername,
+            password: password
+          });
+          
+          if (result.data) {
+            this.enableBackupApi();
+            const user = {
+              id: result.data.id,
+              username: result.data.username,
+              display_name: result.data.display_name,
+              about: result.data.about,
+              theme: localStorage.getItem('chat_theme') || 'dark',
+              usingBackupApi: true
+            };
+            this.saveLocalUser(user);
+            return user;
+          }
+        } catch (backupErr) {
+          console.error('[Auth] Backup API also failed:', backupErr);
+        }
+      }
+      
       throw err;
     }
   }

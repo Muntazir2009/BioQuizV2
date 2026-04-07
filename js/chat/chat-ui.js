@@ -181,12 +181,13 @@ export class ChatUI {
               <div id="conv-title" class="conv-title"></div>
             </div>
             <div id="messages-container" class="messages-container"></div>
-            <div class="message-input-area">
-              <input type="text" id="message-input" placeholder="Type a message..." class="message-input">
-              <button id="send-btn" class="btn-send">Send</button>
-              <button id="file-upload-btn" class="btn-attachment" title="Attach file">📎</button>
-              <input type="file" id="file-input" style="display: none;">
-            </div>
+<div class="message-input-area">
+  <button id="emoji-picker-btn" class="emoji-picker-btn" title="Add emoji">😊</button>
+  <input type="text" id="message-input" placeholder="Type a message..." class="message-input">
+  <button id="send-btn" class="btn-send">Send</button>
+  <button id="file-upload-btn" class="btn-attachment" title="Attach file">📎</button>
+  <input type="file" id="file-input" style="display: none;">
+  </div>
           </div>
         </div>
       </div>
@@ -619,6 +620,213 @@ export class ChatUI {
     const statusDot = document.getElementById('online-status-dot');
     if (statusDot) {
       statusDot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
+    }
+  }
+
+  // Show emoji picker
+  showEmojiPicker(targetInput, position = { x: 0, y: 0 }) {
+    // Remove existing picker
+    this.hideEmojiPicker();
+
+    const emojis = [
+      '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂',
+      '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛',
+      '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨',
+      '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥', '😌', '😔',
+      '😪', '🤤', '😴', '😷', '🤒', '🤕', '🤢', '🤮', '🤧', '🥵',
+      '👍', '👎', '👏', '🙌', '🤝', '🙏', '✌️', '🤞', '🤟', '🤘',
+      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💔', '❣️',
+      '💯', '✨', '🔥', '💫', '⭐', '🌟', '💥', '💢', '💦', '💨'
+    ];
+
+    const picker = document.createElement('div');
+    picker.id = 'emoji-picker';
+    picker.className = 'emoji-picker';
+    picker.innerHTML = `
+      <div class="emoji-picker-header">
+        <span>Emoji</span>
+        <button class="emoji-picker-close">&times;</button>
+      </div>
+      <div class="emoji-picker-grid">
+        ${emojis.map(e => `<button class="emoji-btn" data-emoji="${e}">${e}</button>`).join('')}
+      </div>
+    `;
+
+    // Position picker
+    picker.style.left = `${position.x}px`;
+    picker.style.bottom = `${position.y}px`;
+
+    document.body.appendChild(picker);
+
+    // Event listeners
+    picker.querySelector('.emoji-picker-close').addEventListener('click', () => this.hideEmojiPicker());
+    
+    picker.querySelectorAll('.emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (targetInput) {
+          targetInput.value += btn.dataset.emoji;
+          targetInput.focus();
+        }
+        this.hideEmojiPicker();
+      });
+    });
+
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', this.handleEmojiPickerOutsideClick);
+    }, 100);
+  }
+
+  handleEmojiPickerOutsideClick = (e) => {
+    const picker = document.getElementById('emoji-picker');
+    if (picker && !picker.contains(e.target) && !e.target.classList.contains('emoji-picker-btn')) {
+      this.hideEmojiPicker();
+    }
+  }
+
+  hideEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    if (picker) {
+      picker.remove();
+    }
+    document.removeEventListener('click', this.handleEmojiPickerOutsideClick);
+  }
+
+  // Show reaction picker for a message
+  showReactionPicker(messageId, position) {
+    const quickReactions = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+    
+    const picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    picker.innerHTML = quickReactions.map(e => 
+      `<button class="reaction-btn" data-emoji="${e}" data-message-id="${messageId}">${e}</button>`
+    ).join('');
+
+    picker.style.left = `${position.x}px`;
+    picker.style.top = `${position.y}px`;
+
+    document.body.appendChild(picker);
+
+    picker.querySelectorAll('.reaction-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const event = new CustomEvent('addReaction', {
+          detail: { messageId: btn.dataset.messageId, emoji: btn.dataset.emoji }
+        });
+        document.dispatchEvent(event);
+        picker.remove();
+      });
+    });
+
+    // Auto-remove after timeout
+    setTimeout(() => picker.remove(), 5000);
+  }
+
+  // Add message with context menu for reactions
+  addMessageWithActions(messageData, isOwn = false) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+
+    const { id, username, content, timestamp, reactions = [] } = messageData;
+
+    const messageEl = document.createElement('div');
+    messageEl.className = `message ${isOwn ? 'own' : 'other'}`;
+    messageEl.dataset.messageId = id;
+    
+    const time = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    
+    let reactionsHtml = '';
+    if (reactions.length > 0) {
+      const grouped = reactions.reduce((acc, r) => {
+        acc[r.emoji] = (acc[r.emoji] || 0) + 1;
+        return acc;
+      }, {});
+      reactionsHtml = `<div class="message-reactions">${
+        Object.entries(grouped).map(([emoji, count]) => 
+          `<span class="reaction" data-emoji="${emoji}">${emoji} ${count}</span>`
+        ).join('')
+      }</div>`;
+    }
+
+    messageEl.innerHTML = `
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-author">${username}</span>
+          ${time ? `<span class="message-time">${time}</span>` : ''}
+        </div>
+        <div class="message-text">${this.formatMessageText(content)}</div>
+        ${reactionsHtml}
+        <button class="message-react-btn" title="Add reaction">+</button>
+      </div>
+    `;
+
+    // Add reaction button click handler
+    const reactBtn = messageEl.querySelector('.message-react-btn');
+    if (reactBtn) {
+      reactBtn.addEventListener('click', (e) => {
+        const rect = e.target.getBoundingClientRect();
+        this.showReactionPicker(id, { x: rect.left, y: rect.top - 40 });
+      });
+    }
+
+    container.appendChild(messageEl);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Show user profile preview
+  showUserProfile(userId, username, displayName, about, position) {
+    // Remove existing preview
+    const existing = document.querySelector('.user-profile-preview');
+    if (existing) existing.remove();
+
+    const preview = document.createElement('div');
+    preview.className = 'user-profile-preview';
+    preview.innerHTML = `
+      <div class="profile-preview-avatar">${(displayName || username).charAt(0).toUpperCase()}</div>
+      <div class="profile-preview-info">
+        <div class="profile-preview-name">${displayName || username}</div>
+        <div class="profile-preview-username">@${username}</div>
+        ${about ? `<div class="profile-preview-about">${about}</div>` : ''}
+      </div>
+      <button class="btn-primary profile-preview-dm" data-user-id="${userId}">Send Message</button>
+    `;
+
+    preview.style.left = `${position.x}px`;
+    preview.style.top = `${position.y}px`;
+
+    document.body.appendChild(preview);
+
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', (e) => {
+        if (!preview.contains(e.target)) {
+          preview.remove();
+        }
+      }, { once: true });
+    }, 100);
+  }
+
+  // Show connection status banner
+  showConnectionStatus(status, message) {
+    let banner = document.getElementById('connection-status-banner');
+    
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'connection-status-banner';
+      banner.className = 'connection-banner';
+      const panel = document.getElementById('chat-panel');
+      if (panel) {
+        panel.insertBefore(banner, panel.firstChild);
+      }
+    }
+
+    banner.className = `connection-banner ${status}`;
+    banner.innerHTML = `
+      <span class="connection-icon">${status === 'connected' ? '✓' : status === 'connecting' ? '⟳' : '!'}</span>
+      <span>${message}</span>
+    `;
+
+    if (status === 'connected') {
+      setTimeout(() => banner.remove(), 3000);
     }
   }
 }
