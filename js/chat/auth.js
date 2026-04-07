@@ -57,8 +57,20 @@ export class AuthManager {
 
       const cleanUsername = username.startsWith('@') ? username.substring(1) : username;
 
+      // Check if Supabase is available
+      if (!this.supabase) {
+        throw new Error('Database connection not available. Please try again later.');
+      }
+
       // Check if username exists
-      const available = await this.checkUsernameAvailable(cleanUsername);
+      let available = true;
+      try {
+        available = await this.checkUsernameAvailable(cleanUsername);
+      } catch (checkError) {
+        console.warn('[Auth] Could not check username availability:', checkError);
+        // Continue anyway - the insert will fail if duplicate
+      }
+      
       if (!available) {
         throw new Error('Username already taken');
       }
@@ -70,20 +82,39 @@ export class AuthManager {
       }
 
       // Insert user into database
-      const { data, error } = await this.supabase
-        .from('chat_users')
-        .insert([{
-          username: cleanUsername,
-          display_name: displayName || cleanUsername,
-          password_hash: passwordHash,
-          profile_pic: profilePic,
-          about: about,
-          last_seen: new Date().toISOString()
-        }])
-        .select()
-        .single();
+      let data, error;
+      try {
+        const result = await this.supabase
+          .from('chat_users')
+          .insert([{
+            username: cleanUsername,
+            display_name: displayName || cleanUsername,
+            password_hash: passwordHash,
+            profile_pic: profilePic,
+            about: about,
+            last_seen: new Date().toISOString()
+          }])
+          .select()
+          .single();
+        
+        data = result.data;
+        error = result.error;
+      } catch (fetchError) {
+        console.error('[Auth] Fetch error during registration:', fetchError);
+        throw new Error('Could not connect to server. Please check your internet connection.');
+      }
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Auth] Database error:', error);
+        if (error.code === '23505') {
+          throw new Error('Username already taken');
+        }
+        throw new Error(error.message || 'Registration failed. Please try again.');
+      }
+      
+      if (!data) {
+        throw new Error('Registration failed. Please try again.');
+      }
 
       // Save to local storage
       const user = {

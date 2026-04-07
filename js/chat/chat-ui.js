@@ -8,44 +8,137 @@ export class ChatUI {
     this.isOpen = false;
   }
 
+  // Create floating button HTML
+  createFloatingButton() {
+    return `
+      <button id="chat-floating-btn" class="chat-floating-btn" title="Open Chat">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span id="chat-notification-badge" class="chat-badge" style="display: none;">0</span>
+      </button>
+    `;
+  }
+
   // Create chat panel HTML
   createChatPanel() {
     const html = `
-      <div id="chat-panel" class="chat-panel">
+      <div id="chat-panel" class="chat-panel" style="display: none;">
         <!-- Header -->
         <div class="chat-header">
           <div class="chat-title-bar">
-            <h2>Messages</h2>
+            <div class="chat-header-left">
+              <div class="chat-logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+              <h2>Messages</h2>
+            </div>
             <div class="header-actions">
-              <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
-                <span>🌙</span>
+              <button class="header-btn" id="theme-toggle" title="Toggle theme">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
               </button>
-              <button class="close-btn" id="close-chat">✕</button>
+              <button class="header-btn close-btn" id="close-chat" title="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Auth Panel -->
         <div id="auth-panel" class="chat-section auth-section">
+          <div class="auth-welcome">
+            <div class="auth-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="auth-title">Welcome to Chat</h3>
+            <p class="auth-subtitle">Connect with others, share ideas, and collaborate in real-time</p>
+          </div>
+          
           <div class="auth-forms">
             <!-- Login Form -->
             <form id="login-form" class="auth-form">
-              <h3>Sign In</h3>
-              <input type="text" id="login-username" placeholder="@username" required>
-              <input type="password" id="login-password" placeholder="Password (optional)">
-              <button type="submit" class="btn-primary">Sign In</button>
-              <button type="button" id="switch-to-register" class="btn-link">Create Account</button>
+              <div class="form-group">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" placeholder="Enter your @username" required>
+              </div>
+              <div class="form-group">
+                <label for="login-password">Password <span class="optional-label">(optional)</span></label>
+                <input type="password" id="login-password" placeholder="Enter password if set">
+              </div>
+              <button type="submit" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                Sign In
+              </button>
+              <div class="auth-divider">
+                <span>or</span>
+              </div>
+              <button type="button" id="guest-login-btn" class="btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Continue as Guest
+              </button>
+              <button type="button" id="switch-to-register" class="btn-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <line x1="20" y1="8" x2="20" y2="14"></line>
+                  <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                Create New Account
+              </button>
             </form>
 
             <!-- Register Form -->
             <form id="register-form" class="auth-form" style="display: none;">
-              <h3>Create Account</h3>
-              <input type="text" id="register-username" placeholder="@username" required>
-              <input type="text" id="register-display-name" placeholder="Display Name">
-              <input type="password" id="register-password" placeholder="Password (optional)">
-              <textarea id="register-about" placeholder="About you (max 200 chars)" maxlength="200"></textarea>
-              <button type="submit" class="btn-primary">Create Account</button>
-              <button type="button" id="switch-to-login" class="btn-link">Sign In Instead</button>
+              <div class="form-group">
+                <label for="register-username">Username <span class="required-label">*</span></label>
+                <input type="text" id="register-username" placeholder="Choose a unique @username" required>
+              </div>
+              <div class="form-group">
+                <label for="register-display-name">Display Name</label>
+                <input type="text" id="register-display-name" placeholder="Your public name">
+              </div>
+              <div class="form-group">
+                <label for="register-password">Password <span class="optional-label">(optional)</span></label>
+                <input type="password" id="register-password" placeholder="Secure your account">
+              </div>
+              <div class="form-group">
+                <label for="register-about">Bio</label>
+                <textarea id="register-about" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                <span class="char-count">0/200</span>
+              </div>
+              <button type="submit" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="8.5" cy="7" r="4"></circle>
+                  <line x1="20" y1="8" x2="20" y2="14"></line>
+                  <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                Create Account
+              </button>
+              <button type="button" id="switch-to-login" class="btn-link">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                Already have an account? Sign In
+              </button>
             </form>
           </div>
         </div>
@@ -108,12 +201,83 @@ export class ChatUI {
       return;
     }
 
+    // Create and append floating button
+    const btnWrapper = document.createElement('div');
+    btnWrapper.innerHTML = this.createFloatingButton();
+    document.body.appendChild(btnWrapper.firstElementChild);
+
     // Create and append panel
     const panel = document.createElement('div');
     panel.innerHTML = this.createChatPanel();
     document.body.appendChild(panel.firstElementChild);
 
+    // Setup floating button click handler
+    this.setupFloatingButton();
+
     console.log('[ChatUI] UI initialized');
+  }
+
+  // Setup floating button
+  setupFloatingButton() {
+    const floatingBtn = document.getElementById('chat-floating-btn');
+    if (floatingBtn) {
+      floatingBtn.addEventListener('click', () => this.toggleChat());
+    }
+  }
+
+  // Toggle chat panel
+  toggleChat() {
+    const panel = document.getElementById('chat-panel');
+    const floatingBtn = document.getElementById('chat-floating-btn');
+    
+    if (panel) {
+      this.isOpen = !this.isOpen;
+      
+      if (this.isOpen) {
+        panel.style.display = 'flex';
+        panel.classList.add('open');
+        if (floatingBtn) floatingBtn.classList.add('active');
+      } else {
+        panel.classList.remove('open');
+        if (floatingBtn) floatingBtn.classList.remove('active');
+        // Add a delay before hiding to allow animation
+        setTimeout(() => {
+          if (!this.isOpen) {
+            panel.style.display = 'none';
+          }
+        }, 300);
+      }
+    }
+  }
+
+  // Close chat panel
+  closeChat() {
+    const panel = document.getElementById('chat-panel');
+    const floatingBtn = document.getElementById('chat-floating-btn');
+    
+    this.isOpen = false;
+    
+    if (panel) {
+      panel.classList.remove('open');
+      if (floatingBtn) floatingBtn.classList.remove('active');
+      setTimeout(() => {
+        panel.style.display = 'none';
+      }, 300);
+    }
+  }
+
+  // Open chat panel
+  openChat() {
+    const panel = document.getElementById('chat-panel');
+    const floatingBtn = document.getElementById('chat-floating-btn');
+    
+    this.isOpen = true;
+    
+    if (panel) {
+      panel.style.display = 'flex';
+      panel.classList.add('open');
+      if (floatingBtn) floatingBtn.classList.add('active');
+    }
   }
 
   // Update notification badge
@@ -232,6 +396,229 @@ export class ChatUI {
     const list = document.getElementById(`${tab}-list`);
     if (list) {
       list.innerHTML = '';
+    }
+  }
+
+  // Show typing indicator
+  showTypingIndicator(username) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+
+    // Remove existing typing indicator
+    this.hideTypingIndicator();
+
+    const typingEl = document.createElement('div');
+    typingEl.id = 'typing-indicator';
+    typingEl.className = 'typing-indicator';
+    typingEl.innerHTML = `
+      <div class="typing-content">
+        <span class="typing-user">${username}</span> is typing
+        <span class="typing-dots">
+          <span></span><span></span><span></span>
+        </span>
+      </div>
+    `;
+
+    container.appendChild(typingEl);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Hide typing indicator
+  hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+      indicator.remove();
+    }
+  }
+
+  // Show toast notification
+  showToast(message, type = 'info') {
+    // Remove existing toast
+    const existingToast = document.querySelector('.chat-toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `chat-toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Remove after delay
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // Show loading state
+  showLoading(container = 'messages-container') {
+    const el = document.getElementById(container);
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="chat-loading">
+        <div class="chat-spinner"></div>
+      </div>
+    `;
+  }
+
+  // Show empty state
+  showEmptyState(container, icon, title, description) {
+    const el = document.getElementById(container);
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="empty-state">
+        ${icon}
+        <h4>${title}</h4>
+        <p>${description}</p>
+      </div>
+    `;
+  }
+
+  // Add message with timestamp and reactions
+  addMessageEnhanced(username, text, isOwn = false, timestamp = null, reactions = [], fileData = null) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+
+    const messageEl = document.createElement('div');
+    messageEl.className = `message ${isOwn ? 'own' : 'other'}`;
+    
+    const time = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    
+    let fileHtml = '';
+    if (fileData) {
+      if (fileData.type && fileData.type.startsWith('image/')) {
+        fileHtml = `<img src="${fileData.url}" class="message-image" alt="image">`;
+      } else if (fileData.type && fileData.type.startsWith('video/')) {
+        fileHtml = `<video class="message-video" controls><source src="${fileData.url}" type="${fileData.type}"></video>`;
+      } else if (fileData.url) {
+        fileHtml = `<a href="${fileData.url}" class="file-link" download>${fileData.name || 'Download'}</a>`;
+      }
+    }
+
+    let reactionsHtml = '';
+    if (reactions && reactions.length > 0) {
+      reactionsHtml = `<div class="message-reactions">${reactions.map(r => `<span class="reaction">${r.emoji} ${r.count}</span>`).join('')}</div>`;
+    }
+
+    messageEl.innerHTML = `
+      <div class="message-content">
+        <div class="message-header">
+          <span class="message-author">${username}</span>
+          ${time ? `<span class="message-time">${time}</span>` : ''}
+        </div>
+        <div class="message-text">${this.formatMessageText(text)}</div>
+        ${fileHtml}
+        ${reactionsHtml}
+      </div>
+    `;
+
+    container.appendChild(messageEl);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Format message text (links, mentions, etc.)
+  formatMessageText(text) {
+    if (!text) return '';
+    
+    // Escape HTML
+    let formatted = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // Convert URLs to links
+    formatted = formatted.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="message-link">$1</a>'
+    );
+    
+    // Convert @mentions
+    formatted = formatted.replace(
+      /@([a-zA-Z0-9_]+)/g,
+      '<span class="message-mention">@$1</span>'
+    );
+    
+    // Convert line breaks
+    formatted = formatted.replace(/\n/g, '<br>');
+    
+    return formatted;
+  }
+
+  // Show user search modal for new DM
+  showUserSearchModal() {
+    const modal = document.createElement('div');
+    modal.id = 'user-search-modal';
+    modal.className = 'chat-modal';
+    modal.innerHTML = `
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>New Message</h3>
+          <button class="modal-close" id="close-user-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="user-search-input" placeholder="Search for a user..." class="search-input">
+          <div id="user-search-results" class="search-results"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Setup close
+    document.getElementById('close-user-search').addEventListener('click', () => modal.remove());
+    modal.querySelector('.modal-overlay').addEventListener('click', () => modal.remove());
+  }
+
+  // Show create group modal
+  showCreateGroupModal() {
+    const modal = document.createElement('div');
+    modal.id = 'create-group-modal';
+    modal.className = 'chat-modal';
+    modal.innerHTML = `
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Create Group</h3>
+          <button class="modal-close" id="close-create-group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Group Name</label>
+            <input type="text" id="group-name-input" placeholder="Enter group name..." class="search-input">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="group-desc-input" placeholder="What's this group about?" class="search-input" rows="3"></textarea>
+          </div>
+          <button class="btn-primary" id="create-group-submit" style="width: 100%;">Create Group</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Setup close
+    document.getElementById('close-create-group').addEventListener('click', () => modal.remove());
+    modal.querySelector('.modal-overlay').addEventListener('click', () => modal.remove());
+  }
+
+  // Update online status indicator
+  updateOnlineStatus(isOnline) {
+    const statusDot = document.getElementById('online-status-dot');
+    if (statusDot) {
+      statusDot.className = `status-dot ${isOnline ? 'online' : 'offline'}`;
     }
   }
 }

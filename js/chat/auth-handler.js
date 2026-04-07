@@ -61,6 +61,23 @@ export class AuthHandler {
       closeBtn.addEventListener('click', () => this.handleCloseChat());
     }
 
+    // Guest login button
+    const guestBtn = document.getElementById('guest-login-btn');
+    if (guestBtn) {
+      guestBtn.addEventListener('click', () => this.handleGuestLogin());
+    }
+
+    // Bio character count
+    const aboutTextarea = document.getElementById('register-about');
+    if (aboutTextarea) {
+      aboutTextarea.addEventListener('input', (e) => {
+        const charCount = e.target.closest('.form-group')?.querySelector('.char-count');
+        if (charCount) {
+          charCount.textContent = `${e.target.value.length}/200`;
+        }
+      });
+    }
+
     // Tab switching
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(btn => {
@@ -153,9 +170,102 @@ export class AuthHandler {
   }
 
   handleCloseChat() {
-    const panel = document.getElementById('chat-panel');
-    if (panel) {
-      panel.classList.remove('open');
+    // Use the UI's close method to properly toggle
+    if (this.ui && this.ui.closeChat) {
+      this.ui.closeChat();
+    } else {
+      // Fallback
+      const panel = document.getElementById('chat-panel');
+      const floatingBtn = document.getElementById('chat-floating-btn');
+      if (panel) {
+        panel.classList.remove('open');
+        panel.style.display = 'none';
+      }
+      if (floatingBtn) {
+        floatingBtn.classList.remove('active');
+      }
+    }
+  }
+
+  async handleGuestLogin() {
+    try {
+      // Generate a random guest username
+      const guestId = Math.random().toString(36).substring(2, 8);
+      const guestUsername = `guest_${guestId}`;
+      const guestDisplayName = `Guest ${guestId.toUpperCase()}`;
+
+      // Try to register as guest
+      const user = await this.auth.register(
+        guestUsername,
+        guestDisplayName,
+        null, // no password
+        null,
+        'Guest user'
+      );
+
+      console.log('[AuthHandler] Guest login successful:', user.username);
+      
+      this.showSuccessMessage('Welcome, Guest!');
+      await this.loadUserProfile(user);
+      this.ui.showChatMain();
+    } catch (error) {
+      console.error('[AuthHandler] Guest login error:', error);
+      
+      // If registration fails, create a local-only guest user
+      const guestId = Math.random().toString(36).substring(2, 8);
+      const localGuest = {
+        id: `local_${guestId}`,
+        username: `guest_${guestId}`,
+        display_name: `Guest ${guestId.toUpperCase()}`,
+        profile_pic: null,
+        about: 'Guest user (offline mode)',
+        theme: 'dark',
+        isLocalGuest: true
+      };
+      
+      localStorage.setItem('chat_user', JSON.stringify(localGuest));
+      this.auth.currentUser = localGuest;
+      
+      this.showSuccessMessage('Welcome! You are in guest mode.');
+      this.ui.showChatMain();
+      this.displayGuestProfile(localGuest);
+    }
+  }
+
+  displayGuestProfile(guest) {
+    const profileView = document.getElementById('profile-view');
+    if (!profileView) return;
+    
+    profileView.innerHTML = `
+      <div class="profile-card guest-card">
+        <div class="guest-avatar">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="profile-name">${guest.display_name}</div>
+        <div class="profile-username">@${guest.username}</div>
+        <div class="guest-notice">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Guest mode - Create an account to save your messages
+        </div>
+        <button id="guest-upgrade-btn" class="btn-primary" style="width: 100%; margin-top: 12px;">Create Account</button>
+      </div>
+    `;
+
+    // Setup upgrade button
+    const upgradeBtn = document.getElementById('guest-upgrade-btn');
+    if (upgradeBtn) {
+      upgradeBtn.addEventListener('click', () => {
+        this.auth.logout();
+        this.ui.showAuthPanel();
+        this.showRegisterForm();
+      });
     }
   }
 
@@ -290,12 +400,19 @@ export class AuthHandler {
   }
 
   showError(message) {
-    alert('❌ ' + message);
+    if (this.ui && this.ui.showToast) {
+      this.ui.showToast(message, 'error');
+    } else {
+      console.error('[AuthHandler] Error:', message);
+    }
   }
 
   showSuccessMessage(message) {
-    console.log('[AuthHandler] ✓ ' + message);
-    // Could show a toast here instead of just logging
+    if (this.ui && this.ui.showToast) {
+      this.ui.showToast(message, 'success');
+    } else {
+      console.log('[AuthHandler] ✓ ' + message);
+    }
   }
 }
 
