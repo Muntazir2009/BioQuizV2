@@ -11,7 +11,6 @@ import StorageManager from './storage.js';
 import ThemeManager from './theme.js';
 import AuthHandler from './auth-handler.js';
 import MessagingHandler from './messaging-handler.js';
-import GroupsHandler from './groups-handler.js';
 
 /**
  * Initialize chat system
@@ -52,7 +51,6 @@ async function initializeChat() {
     // Initialize handlers
     const authHandler = new AuthHandler(authManager, profileManager, themeManager, chatUI);
     const messagingHandler = new MessagingHandler(messagingManager, storageManager, authManager, chatUI);
-    const groupsHandler = new GroupsHandler(supabase, authManager, chatUI);
 
     // Make available globally
     window.chatSystem = {
@@ -64,14 +62,10 @@ async function initializeChat() {
       ui: chatUI,
       handlers: {
         auth: authHandler,
-        messaging: messagingHandler,
-        groups: groupsHandler
+        messaging: messagingHandler
       },
       supabase: supabase
     };
-
-    // Initialize groups handler
-    groupsHandler.init();
 
     console.log('[Chat Init] ✓ All managers initialized');
 
@@ -80,18 +74,12 @@ async function initializeChat() {
     if (currentUser) {
       console.log('[Chat Init] ✓ User logged in:', currentUser.username);
       chatUI.showChatMain();
-      
-      // Check if this is a local guest
-      if (currentUser.isLocalGuest) {
-        window.chatSystem.handlers.auth.displayGuestProfile(currentUser);
-      }
     } else {
       console.log('[Chat Init] No logged-in user detected');
       chatUI.showAuthPanel();
     }
 
-    // Chat starts closed by default - user clicks the floating button to open
-    console.log('[Chat Init] ✓ Chat system fully initialized! Click the chat icon to open.');
+    console.log('[Chat Init] ✓ Chat system fully initialized!');
   } catch (error) {
     console.error('[Chat Init] Initialization error:', error);
   }
