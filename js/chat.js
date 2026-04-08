@@ -98,6 +98,7 @@ function initializeChatUI() {
   if (nameInput) {
     nameInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
+        e.preventDefault();
         if (nameSubmit) nameSubmit.click();
       }
     });
@@ -112,14 +113,14 @@ function initializeChatUI() {
         // Show name prompt if user doesn't have a name yet
         if (namePrompt) {
           namePrompt.style.display = 'block';
-          if (nameInput) nameInput.focus();
+          if (nameInput) setTimeout(() => nameInput.focus(), 50);
         }
       } else {
         // Toggle chat window if user already has a name
         if (chatWindow) {
           chatWindow.classList.toggle('show');
           if (chatWindow.classList.contains('show') && chatInput) {
-            chatInput.focus();
+            setTimeout(() => chatInput.focus(), 50);
           }
         }
       }
@@ -137,6 +138,7 @@ function initializeChatUI() {
   // Send message button
   if (sendBtn) {
     sendBtn.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
       sendMessage();
     });
@@ -233,7 +235,7 @@ function listenForMessages() {
 }
 
 // Display message with enhanced styling
-function displayMessage(message) {
+function displayMessage(message, messageId) {
   if (!chatMessages) return;
   
   const isOwnMessage = message.senderId === userId;
@@ -286,31 +288,49 @@ function displayMessage(message) {
 function sendMessage() {
   if (!database) {
     console.warn('Chat is not configured yet.');
+    alert('Chat is not configured. Please check console for errors.');
     return;
   }
   
   if (!chatInput || !chatMessages) {
     console.error('Chat DOM elements not found');
+    alert('Chat elements not found. Please refresh the page.');
     return;
   }
   
   const text = chatInput.value.trim();
-  if (text && userName && userId) {
-    const message = {
-      sender: userName,
-      senderId: userId,
-      senderColor: userColor,
-      text: text,
-      timestamp: Date.now()
-    };
-    
+  if (!text) {
+    console.warn('Empty message - not sending');
+    return;
+  }
+  
+  if (!userName || !userId) {
+    console.error('User not authenticated - please enter your name first');
+    alert('Please enter your name first.');
+    return;
+  }
+  
+  const message = {
+    sender: userName,
+    senderId: userId,
+    senderColor: userColor || '#0070d1',
+    text: text,
+    timestamp: Date.now()
+  };
+  
+  try {
     const messagesRef = ref(database, 'messages');
     push(messagesRef, message)
       .then(() => {
         chatInput.value = '';
+        chatInput.focus();
       })
       .catch(err => {
         console.error('Error sending message:', err);
+        alert('Failed to send message: ' + err.message);
       });
+  } catch (err) {
+    console.error('Error in sendMessage:', err);
+    alert('Error sending message: ' + err.message);
   }
 }
