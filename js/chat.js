@@ -1,10 +1,8 @@
-// Firebase configuration - REPLACE WITH YOUR OWN CONFIG
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// Import Firebase SDK (modular)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+import { getDatabase, ref, push, onChildAdded, get } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js';
 
-// Your web app's Firebase configuration
+// Firebase configuration - Updated with your credentials
 const firebaseConfig = {
   apiKey: "AIzaSyBvsLNXMGsr-XQF-GE-EET1YOnICSMicOA",
   authDomain: "bioquiz-chat.firebaseapp.com",
@@ -16,76 +14,153 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+let database = null;
+try {
+  const app = initializeApp(firebaseConfig);
+  database = getDatabase(app);
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+}
 
 // DOM elements
-const chatBubble = document.getElementById('chatBubble');
-const chatWindow = document.getElementById('chatWindow');
-const closeChat = document.getElementById('closeChat');
-const chatMessages = document.getElementById('chatMessages');
-const chatInput = document.getElementById('chatInput');
-const sendBtn = document.getElementById('sendBtn');
-const namePrompt = document.getElementById('namePrompt');
-const nameInput = document.getElementById('nameInput');
-const nameSubmit = document.getElementById('nameSubmit');
+let chatBubble, chatWindow, closeChat, chatMessages, chatInput, sendBtn, namePrompt, nameInput, nameSubmit;
 
 // User data
 let userName = localStorage.getItem('chatUserName');
 
-// Check if user has a name
-if (!userName) {
-  namePrompt.style.display = 'block';
-} else {
-  initializeChat();
-}
+// Initialize DOM and event listeners
+function initializeChatUI() {
+  chatBubble = document.getElementById('chatBubble');
+  chatWindow = document.getElementById('chatWindow');
+  closeChat = document.getElementById('closeChat');
+  chatMessages = document.getElementById('chatMessages');
+  chatInput = document.getElementById('chatInput');
+  sendBtn = document.getElementById('sendBtn');
+  namePrompt = document.getElementById('namePrompt');
+  nameInput = document.getElementById('nameInput');
+  nameSubmit = document.getElementById('nameSubmit');
 
-// Name submit handler
-nameSubmit.addEventListener('click', () => {
-  const name = nameInput.value.trim();
-  if (name) {
-    userName = name;
-    localStorage.setItem('chatUserName', userName);
-    namePrompt.style.display = 'none';
+  if (!chatBubble) {
+    console.error('Chat elements not found in DOM');
+    return;
+  }
+
+  // Check if user has a name
+  if (!userName) {
+    if (namePrompt) namePrompt.style.display = 'block';
+  } else {
     initializeChat();
   }
-});
 
-// Allow enter key for name input
-nameInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    nameSubmit.click();
+  // Name submit handler
+  if (nameSubmit) {
+    nameSubmit.addEventListener('click', () => {
+      const name = nameInput.value.trim();
+      if (name) {
+        userName = name;
+        localStorage.setItem('chatUserName', userName);
+        if (namePrompt) namePrompt.style.display = 'none';
+        initializeChat();
+      }
+    });
   }
-});
 
-// Initialize chat
-function initializeChat() {
-  loadMessages();
-  listenForMessages();
-}
+  // Allow enter key for name input
+  if (nameInput) {
+    nameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        if (nameSubmit) nameSubmit.click();
+      }
+    });
+  }
 
-// Load existing messages
-function loadMessages() {
-  const messagesRef = database.ref('messages');
-  messagesRef.once('value', (snapshot) => {
-    const messages = snapshot.val();
-    if (messages) {
-      Object.values(messages).forEach(displayMessage);
+  // Chat bubble toggle
+  if (chatBubble) {
+    chatBubble.addEventListener('click', () => {
+      if (chatWindow) chatWindow.classList.toggle('show');
+    });
+  }
+
+  // Close chat button
+  if (closeChat) {
+    closeChat.addEventListener('click', () => {
+      if (chatWindow) chatWindow.classList.remove('show');
+    });
+  }
+
+  // Send message button
+  if (sendBtn) {
+    sendBtn.addEventListener('click', sendMessage);
+  }
+
+  // Enter key to send
+  if (chatInput) {
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  }
+
+  // Close chat when clicking outside
+  document.addEventListener('click', (e) => {
+    if (chatWindow && !chatWindow.contains(e.target) && !chatBubble.contains(e.target)) {
+      chatWindow.classList.remove('show');
     }
   });
 }
 
+// Run initialization when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeChatUI);
+} else {
+  initializeChatUI();
+}
+
+// Initialize chat
+function initializeChat() {
+  if (database) {
+    loadMessages();
+    listenForMessages();
+  } else {
+    console.warn('Firebase database not initialized - messages disabled');
+  }
+}
+
+// Load existing messages
+function loadMessages() {
+  if (!database) return;
+  
+  const messagesRef = ref(database, 'messages');
+  get(messagesRef)
+    .then((snapshot) => {
+      const messages = snapshot.val();
+      if (messages && chatMessages) {
+        Object.values(messages).forEach(displayMessage);
+      }
+    })
+    .catch(err => {
+      console.warn('Error loading messages:', err);
+    });
+}
+
 // Listen for new messages
 function listenForMessages() {
-  const messagesRef = database.ref('messages');
-  messagesRef.on('child_added', (snapshot) => {
+  if (!database) return;
+  
+  const messagesRef = ref(database, 'messages');
+  onChildAdded(messagesRef, (snapshot) => {
     const message = snapshot.val();
     displayMessage(message);
+  }, (error) => {
+    console.warn('Error listening for messages:', error);
   });
 }
 
 // Display message
 function displayMessage(message) {
+  if (!chatMessages) return;
+  
   const messageDiv = document.createElement('div');
   messageDiv.className = `message ${message.sender === userName ? 'sent' : 'received'}`;
   
@@ -105,6 +180,11 @@ function displayMessage(message) {
 
 // Send message
 function sendMessage() {
+  if (!database) {
+    alert('Chat is not configured yet.');
+    return;
+  }
+  
   const text = chatInput.value.trim();
   if (text && userName) {
     const message = {
@@ -113,11 +193,14 @@ function sendMessage() {
       timestamp: Date.now()
     };
     
-    const messagesRef = database.ref('messages');
-    messagesRef.push(message);
+    const messagesRef = ref(database, 'messages');
+    push(messagesRef, message).catch(err => {
+      console.error('Error sending message:', err);
+    });
     
     chatInput.value = '';
   }
+<<<<<<< HEAD
 }
 
 // Event listeners
@@ -143,3 +226,6 @@ document.addEventListener('click', (e) => {
     chatWindow.classList.remove('show');
   }
 });
+=======
+}
+>>>>>>> 5677119 (hh)
