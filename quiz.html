@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="css/timer.css?v=9">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Exo+2:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/chat.css">
 
 <style>
 *{box-sizing:border-box}
@@ -399,5 +400,35 @@ if('serviceWorker' in navigator){
 </script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="three-space.js?v=2"></script>
+
+<!-- Chat System -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<div class="chat-bubble" id="chatBubble">
+  <svg viewBox="0 0 24 24">
+    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3.05 1.05 4.42L2 22l5.58-1.05C9.95 21.64 11.46 22 13 22h7c1.1 0 2-.9 2-2V12c0-5.52-4.48-10-10-10z"/>
+  </svg>
+</div>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <span>BioQuiz Chat</span>
+    <button class="close-btn" id="closeChat">&times;</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input-area">
+    <input type="text" class="chat-input" id="chatInput" placeholder="Type a message...">
+    <button class="send-btn" id="sendBtn">Send</button>
+  </div>
+</div>
+
+<div class="name-prompt" id="namePrompt" style="display: none;">
+  <h3>Welcome to BioQuiz Chat!</h3>
+  <input type="text" id="nameInput" placeholder="Enter your name">
+  <button id="nameSubmit">Start Chatting</button>
+</div>
+
+<script src="js/chat.js"></script>
 </body>
 </html>
