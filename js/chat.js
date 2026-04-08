@@ -76,33 +76,39 @@ function initializeChatUI() {
 
   // Chat bubble toggle
   if (chatBubble) {
-    chatBubble.addEventListener('click', () => {
+    chatBubble.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent click from triggering outside click handler
       if (chatWindow) chatWindow.classList.toggle('show');
     });
   }
 
   // Close chat button
   if (closeChat) {
-    closeChat.addEventListener('click', () => {
+    closeChat.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (chatWindow) chatWindow.classList.remove('show');
     });
   }
 
   // Send message button
   if (sendBtn) {
-    sendBtn.addEventListener('click', sendMessage);
+    sendBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sendMessage();
+    });
   }
 
   // Enter key to send
   if (chatInput) {
     chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
+        e.preventDefault();
         sendMessage();
       }
     });
   }
 
-  // Close chat when clicking outside
+  // Close chat when clicking outside (skip if clicking bubble or window)
   document.addEventListener('click', (e) => {
     if (chatWindow && !chatWindow.contains(e.target) && !chatBubble.contains(e.target)) {
       chatWindow.classList.remove('show');
@@ -194,38 +200,12 @@ function sendMessage() {
     };
     
     const messagesRef = ref(database, 'messages');
-    push(messagesRef, message).catch(err => {
-      console.error('Error sending message:', err);
-    });
-    
-    chatInput.value = '';
+    push(messagesRef, message)
+      .then(() => {
+        chatInput.value = '';
+      })
+      .catch(err => {
+        console.error('Error sending message:', err);
+      });
   }
-<<<<<<< HEAD
 }
-
-// Event listeners
-chatBubble.addEventListener('click', () => {
-  chatWindow.classList.toggle('show');
-});
-
-closeChat.addEventListener('click', () => {
-  chatWindow.classList.remove('show');
-});
-
-sendBtn.addEventListener('click', sendMessage);
-
-chatInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    sendMessage();
-  }
-});
-
-// Close chat when clicking outside (optional)
-document.addEventListener('click', (e) => {
-  if (!chatWindow.contains(e.target) && !chatBubble.contains(e.target)) {
-    chatWindow.classList.remove('show');
-  }
-});
-=======
-}
->>>>>>> 5677119 (hh)
